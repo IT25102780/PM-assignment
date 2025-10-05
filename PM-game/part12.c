@@ -2,11 +2,18 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define MAX_PLAYERS 3
 #define MAX_SIZE 10
 #define LOG_FILE "game_log.text"
 
+typedef struct {
+	char symbol;
+	int isComputer;
+} Player;
+
 char **board;
 int N;
+Player players[MAX_PLAYERS];
 
 void initializeBoard() {
 	board = (char **)malloc(N * sizeof(char *));
@@ -19,7 +26,7 @@ void initializeBoard() {
 }
 
 void displayBoard() {
-	printf("\n");
+	printf("\nCurrent board:\n");
 	for (int i = 0; i < N; i++) {
 		for (int j = 0; j<N; j++) {
 			printf(" %c ", board[i][j]);
@@ -45,10 +52,10 @@ void updateBoard(int row, int col, char symbol) {
 	board[row][col] = symbol;
 }
 
-void logMove(int player, int row, int col) {
+void logMove(int playerIndex, int row, int col) {
 	FILE *fp = fopen(LOG_FILE, "a");
 	if (fp != NULL) {
-		fprintf(fp, "Player %d moved at (%d, %d)\n", player, row, col);
+		fprintf(fp, "Player %d (%c) moved at (%d, %d)\n", playerIndex + 1, players[playerIndex].symbol, row, col);
 		fclose(fp);
 	}
 }
@@ -80,42 +87,60 @@ int isDraw() {
 	return 1;
 }
 
-void getUserMove(int player, char symbol) {
+void getUserMove(int playerIndex) {
 	int row, col;
 	do {
-		printf("Player %d (%c), enter row and column: ", player, symbol);
+		printf("Player %d (%c), enter row and column: ", playerIndex + 1, players[playerIndex].symbol);
 		scanf("%d %d", &row, &col);
 	} while (!isValidMove(row, col));
-	updateBoard(row, col, symbol);
-	logMove(player, row, col);
+	updateBoard(row, col, players[playerIndex].symbol);
+	logMove(playerIndex, row, col);
 }
 
-void getComputerMove(char symbol) {
+void getComputerMove(int playerIndex) {
 	int row, col;
-	srand(time(NULL));
+	srand(time(NULL) + playerIndex);
 	do {
 		row = rand() % N;
 		col = rand() % N;
 	} while (!isValidMove(row, col));
-	printf("Computer (%c) moved at (%d, %d)\n", symbol, row, col);
-	updateBoard(row, col, symbol);
-	logMove(2, row, col);
+	printf("Player %d (%c) moved at (%d, %d)\n", playerIndex + 1, players[playerIndex].symbol, row, col);
+	updateBoard(row, col, players[playerIndex].symbol);
+	logMove(playerIndex, row, col);
+}
+
+void configurePlayers(int mode) {
+	char symbols[MAX_PLAYERS] = {'X', '0', 'Z'};
+	for (int i = 0; i < MAX_PLAYERS; i++) {
+		players[i].symbol = symbols[i];
+		if (mode == 1 && i < 2) {
+			players[i].isComputer = 0;
+		} else if (mode == 2 && i == 0) {
+			players[i].isComputer = 0;
+		} else if (mode == 2 && i == 1) {
+			players[i].isComputer = 1;
+		} else {
+			printf("Is Player %d (%c) a computer? (1 = Yes, 0 = No): ", i + 1, symbols[i]);
+			scanf("%d", &players[i].isComputer);
+		}
+	}
 }
 
 void playGame(int mode) {
 	int turn = 0;
-	char symbols[2] = {'X', '0'};
+	int totalPlayers = (mode == 3) ? 3 : 2 ;
+
 	while (1) {
 		displayBoard();
-		if (mode == 1 || (mode ==2 && turn % 2 == 0)) {
-			getUserMove(turn % 2 + 1, symbols[turn % 2]);
-		} else {
-			getComputerMove(symbols[1]);
-		}
+		int currentPlayer = turn % totalPlayers;
+		if (players[currentPlayer].isComputer)
+			getComputerMove(currentPlayer);
+	       	else 
+			getUserMove(currentPlayer);
 
-		if (checkWin (symbols[turn % 2])) {
+		if (checkWin(players[currentPlayer].symbol)) {
 			displayBoard();
-			printf("Player %d (%c) wins!\n", turn % 2 + 1, symbols[turn % 2]);
+			printf("Player %d (%c) wins!\n", currentPlayer + 1, players[currentPlayer].symbol);
 			break;
 		}
 		if (isDraw()) {
@@ -128,6 +153,7 @@ void playGame(int mode) {
 }
 
 int main() {
+	printf("Welcome to Tic-Tac-Toe\n");
 	printf("Enter board size N (3-10): ");
 	scanf("%d", &N);
 	if (N < 3 || N > 10) {
@@ -136,13 +162,18 @@ int main() {
 	}
 
 	int mode;
-	printf("Choose mode:\n1. User vs User\n2. User vs Computer\nEnter choice: ");
+	printf("Choose mode:\n1. User vs User\n2. User vs Computer\n3. Multi-Player (3 players)\nEnter choice: ");
 	scanf("%d", &mode);
+	if (mode < 1 || mode > 3) {
+		printf("Invalid mode.\n");
+		return 1;
+	}
 
 	initializeBoard();
 	FILE *fp = fopen(LOG_FILE, "w"); // clear log file
 	if (fp) fclose(fp);
 
+	configurePlayers(mode);
 	playGame(mode);
 
 	for (int i = 0; i<N; i++) free(board[i]);
