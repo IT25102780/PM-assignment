@@ -2,19 +2,22 @@
 #include <stdlib.h>
 #include <time.h>
 
+// Maximum number of players supported
 #define MAX_PLAYERS 3
 #define MAX_SIZE 10
-#define LOG_FILE "game_log.text"
+#define LOG_FILE "game_log.text"  // File to store move logs
 
+// Structure to represent a player
 typedef struct {
-	char symbol;
-	int isComputer;
+	char symbol;      // Player's symbol 
+	int isComputer;   // 1 if computer, 0 if human
 } Player;
 
-char **board;
-int N;
-Player players[MAX_PLAYERS];
+char **board;                  // Dynamic 2D array for the game oard
+int N;                         // Board size (N * N)
+Player players[MAX_PLAYERS];   // Array to store player information
 
+// Function to initialize the game board with empty spaces
 void initializeBoard() {
 	board = (char **)malloc(N * sizeof(char *));
 	for (int i = 0; i<N; i++) {
@@ -25,6 +28,7 @@ void initializeBoard() {
 	}
 }
 
+// Function to display the current state of the board
 void displayBoard() {
 	printf("\nCurrent board:\n");
 	for (int i = 0; i < N; i++) {
@@ -44,14 +48,17 @@ void displayBoard() {
 	printf("\n");
 }
 
+// Function to check if a move is valid (within bounds and on an empty cell)
 int isValidMove(int row, int col) {
 	return row >= 0 && row < N && col >= 0 && col < N && board[row][col] == ' ';
 }
 
+// Function to update the board with the player's symbol
 void updateBoard(int row, int col, char symbol) {
 	board[row][col] = symbol;
 }
 
+// Function to log each move to a file
 void logMove(int playerIndex, int row, int col) {
 	FILE *fp = fopen(LOG_FILE, "a");
 	if (fp != NULL) {
@@ -60,8 +67,9 @@ void logMove(int playerIndex, int row, int col) {
 	}
 }
 
+// Function to check if a player has won the game
 int checkWin(char symbol) {
-	// Rows and Columns
+	// Check rows and columns
 	for (int i = 0; i < N; i++) {
 		int rowWin = 1, colWin = 1;
 		for (int j = 0; j < N; j++) {
@@ -71,7 +79,7 @@ int checkWin(char symbol) {
 		if (rowWin || colWin) return 1;
 	}
 
-	// Diagonals
+	// Check diagonals
 	int diag1 = 1, diag2 = 1;
 	for (int i = 0; i < N; i++) {
 		if (board[i][i] != symbol) diag1 = 0;
@@ -80,6 +88,7 @@ int checkWin(char symbol) {
 	return diag1 || diag2;
 }
 
+// Function to check if the game is a draw
 int isDraw() {
 	for (int i = 0; i<N; i++)
 		for (int j = 0; j < N; j++)
@@ -87,6 +96,7 @@ int isDraw() {
 	return 1;
 }
 
+// Function to get move input from a human player
 void getUserMove(int playerIndex) {
 	int row, col;
 	do {
@@ -97,36 +107,41 @@ void getUserMove(int playerIndex) {
 	logMove(playerIndex, row, col);
 }
 
+// Function to generate a random valid move for a computer player
 void getComputerMove(int playerIndex) {
 	int row, col, attempts = 0;
 	do {
 		row = rand() % N;
 		col = rand() % N;
 		attempts++;
-		if (attempts > N * N) break; //prevent infinite loop
+		if (attempts > N * N) break; //prevent infinite loop if board is full
 	} while (!isValidMove(row, col));
 	printf("Player %d (%c) moved at (%d, %d)\n", playerIndex + 1, players[playerIndex].symbol, row, col);
 	updateBoard(row, col, players[playerIndex].symbol);
 	logMove(playerIndex, row, col);
 }
 
+// Function to configure player roles (human or computer) based on game mode
 void configurePlayers(int mode) {
 	char symbols[MAX_PLAYERS] = {'X', '0', 'Z'};
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		players[i].symbol = symbols[i];
 		if (mode == 1 && i < 2) {
-			players[i].isComputer = 0;
+			players[i].isComputer = 0;   // Mode 1: Two human players
 		} else if (mode == 2 && i == 0) {
-			players[i].isComputer = 0;
+			players[i].isComputer = 0;   // Mode 2: Player 1 is human
 		} else if (mode == 2 && i == 1) {
-			players[i].isComputer = 1;
+			players[i].isComputer = 1;   // Mode 2: Player 2 is computer
 		} else {
+
+			// Mode 3: Ask user to define each player's role
 			printf("Is Player %d (%c) a computer? (1 = Yes, 0 = No): ", i + 1, symbols[i]);
 			scanf("%d", &players[i].isComputer);
 		}
 	}
 }
 
+// Main game loop to handle turns, win/draw checks, and player actions
 void playGame(int mode) {
 	int turn = 0;
 	int totalPlayers = (mode == 3) ? 3 : 2 ;
@@ -153,9 +168,12 @@ void playGame(int mode) {
 	}
 }
 
+// Entry point of the program
 int main() {
-	srand(time(NULL)); // Random seed initialized once
+	srand(time(NULL)); // Initialize random seed for computer moves
 	printf("Welcome to Tic-Tac-Toe\n");
+
+	// Get board size from user
 	printf("Enter board size N (3-10): ");
 	scanf("%d", &N);
 	if (N < 3 || N > 10) {
@@ -163,6 +181,7 @@ int main() {
 		return 1;
 	}
 
+        // Get game mode from user
 	int mode;
 	printf("Choose mode:\n1. User vs User\n2. User vs Computer\n3. Multi-Player (3 players)\nEnter choice: ");
 	scanf("%d", &mode);
@@ -171,13 +190,16 @@ int main() {
 		return 1;
 	}
 
+	// Initialize board and clear log file
 	initializeBoard();
-	FILE *fp = fopen(LOG_FILE, "w"); // clear log file
+	FILE *fp = fopen(LOG_FILE, "w"); 
 	if (fp) fclose(fp);
 
+	// Configure players and start the game
 	configurePlayers(mode);
 	playGame(mode);
 
+	// Free dynamically allocated memory
 	for (int i = 0; i<N; i++) free(board[i]);
 	free(board);
 	return 0;
