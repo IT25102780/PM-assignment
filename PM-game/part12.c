@@ -98,11 +98,12 @@ void getUserMove(int playerIndex) {
 }
 
 void getComputerMove(int playerIndex) {
-	int row, col;
-	srand(time(NULL) + playerIndex);
+	int row, col, attempts = 0;
 	do {
 		row = rand() % N;
 		col = rand() % N;
+		attempts++;
+		if (attempts > N * N) break; //prevent infinite loop
 	} while (!isValidMove(row, col));
 	printf("Player %d (%c) moved at (%d, %d)\n", playerIndex + 1, players[playerIndex].symbol, row, col);
 	updateBoard(row, col, players[playerIndex].symbol);
@@ -153,6 +154,7 @@ void playGame(int mode) {
 }
 
 int main() {
+	srand(time(NULL)); // Random seed initialized once
 	printf("Welcome to Tic-Tac-Toe\n");
 	printf("Enter board size N (3-10): ");
 	scanf("%d", &N);
