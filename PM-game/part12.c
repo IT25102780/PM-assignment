@@ -123,22 +123,28 @@ void getComputerMove(int playerIndex) {
 
 // Function to configure player roles (human or computer) based on game mode
 void configurePlayers(int mode) {
-	char symbols[MAX_PLAYERS] = {'X', '0', 'Z'};
-	for (int i = 0; i < MAX_PLAYERS; i++) {
-		players[i].symbol = symbols[i];
-		if (mode == 1 && i < 2) {
-			players[i].isComputer = 0;   // Mode 1: Two human players
-		} else if (mode == 2 && i == 0) {
-			players[i].isComputer = 0;   // Mode 2: Player 1 is human
-		} else if (mode == 2 && i == 1) {
-			players[i].isComputer = 1;   // Mode 2: Player 2 is computer
-		} else {
+    char symbols[MAX_PLAYERS] = {'X', 'O', 'Z'};
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        players[i].symbol = symbols[i];
 
-			// Mode 3: Ask user to define each player's role
-			printf("Is Player %d (%c) a computer? (1 = Yes, 0 = No): ", i + 1, symbols[i]);
-			scanf("%d", &players[i].isComputer);
-		}
-	}
+        if (mode == 1) {
+            // Mode 1: Two human players only
+            players[i].isComputer = 0;
+            if (i >= 2) break; // Stop after player 2
+        }
+        else if (mode == 2) {
+            // Mode 2: Player 1 - Human, Player 2 - Computer
+            if (i == 0) players[i].isComputer = 0;
+            else if (i == 1) players[i].isComputer = 1;
+            else break; // No 3rd player in mode 2
+        }
+        else if (mode == 3) {
+            // Mode 3: Ask for each player's role
+            printf("Is Player %d (%c) a computer? (1 = Yes, 0 = No): ",
+                   i + 1, symbols[i]);
+            scanf("%d", &players[i].isComputer);
+        }
+    }
 }
 
 // Main game loop to handle turns, win/draw checks, and player actions
