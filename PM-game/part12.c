@@ -145,6 +145,22 @@ void configurePlayers(int mode) {
             scanf("%d", &players[i].isComputer);
         }
     }
+
+    // Additional check: prevent all-computer scenario in multi-player mode
+    if (mode == 3) {
+        int allComputer = 1;
+        for (int i = 0; i < 3; i++) {
+            if (players[i].isComputer == 0) {
+                allComputer = 0;
+                break;
+            }
+        }
+        if (allComputer) {
+            printf("\nError: All players cannot be computers in multi-player mode.\n");
+            printf("Please restart and include at least one human player.\n");
+            exit(0); // Stop the program
+        }
+    }
 }
 
 // Main game loop to handle turns, win/draw checks, and player actions
